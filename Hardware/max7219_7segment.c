@@ -22,7 +22,7 @@ void Init_Max7219(){
 	//scan limit
 	Write_Max7219(0x0b, 0x07);
 	//brightness
-	Write_Max7219(0x0a, 0x01);
+	Write_Max7219(0x0a, 0x00);
 	//decode mode
 	Write_Max7219(0x09, 0xff);
 }

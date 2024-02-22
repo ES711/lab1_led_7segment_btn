@@ -72,7 +72,6 @@ void task7Segment(void *pvParm){
 	uint32_t stuID = 11217003;
 	uint32_t defaultNum = 12345678;
 	uint8_t displayMode = 0;
-	
 	while(1){
 		uint32_t counter = xTaskGetTickCount()/1000;
 		
@@ -118,7 +117,7 @@ void taskBtn(void *pvParm){
 		//sw1
 		if(HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin)){
 			uint32_t pressDurationSW1 = xTaskGetTickCount() - preMS;
-			if(pressDurationSW1 < 100)continue;
+			if(pressDurationSW1 < 50)continue;
 			else{
 				mode = 0;
 				printf("display mode:default \r\n");
@@ -129,7 +128,7 @@ void taskBtn(void *pvParm){
 		//sw2
 		if(HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin)){
 			uint32_t pressDurationSW2 = xTaskGetTickCount() - preMS; 
-			if(pressDurationSW2 < 100)continue;
+			if(pressDurationSW2 < 50)continue;
 			else {
 				mode = 1;
 				printf("display mode:student id \r\n");
@@ -140,7 +139,7 @@ void taskBtn(void *pvParm){
 		//sw3
 		if(!HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin)){
 			uint32_t pressDurationSW3 = xTaskGetTickCount() - preMS; 
-			if(pressDurationSW3 < 100)continue;
+			if(pressDurationSW3 < 50)continue;
 			else{
 				mode = 2;
 				printf("display mode:system startup timer \r\n");
@@ -151,7 +150,7 @@ void taskBtn(void *pvParm){
 		//sw4
 		if(!HAL_GPIO_ReadPin(SW4_GPIO_Port, SW4_Pin)){
 			uint32_t pressDurationSW4 = xTaskGetTickCount() - preMS; 
-			if(pressDurationSW4 < 100)continue;
+			if(pressDurationSW4 < 50)continue;
 			else{
 				mode = 3;
 				printf("display mode:reserved, back to default \r\n");
@@ -199,10 +198,13 @@ int main(void)
 	Init_Max7219();
 	printf("init success \r\n");
 	queueSwitch = xQueueCreate(3, sizeof(uint8_t));
+	
 	xTaskCreate(task7Segment, "7segment", 128, NULL, 1, &handle7Segment);
 	xTaskCreate(taskBtn, "btn_scan", 128, NULL, 1, &handleBtn);
+	
 	printf("start scheduler \r\n");
 	printf("display mode:default \r\n");
+	
 	vTaskStartScheduler();
   /* USER CODE END 2 */
 
