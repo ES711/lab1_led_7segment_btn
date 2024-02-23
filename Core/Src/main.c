@@ -60,7 +60,6 @@ QueueHandle_t queueSwitch;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -79,7 +78,7 @@ void task7Segment(void *pvParm){
 			counter = 99999999;
 		}
 		
-		xQueueReceive(queueSwitch, &displayMode, pdMS_TO_TICKS(100));
+		xQueueReceiveFromISR(queueSwitch, &displayMode, NULL);
 		
 		switch(displayMode){
 				case 0:
@@ -106,9 +105,12 @@ void task7Segment(void *pvParm){
 		if((counter % 10 == 0) && (counter > 0)){
 			HAL_GPIO_TogglePin(LED_C8_GPIO_Port, LED_C8_Pin);
 		}else HAL_GPIO_WritePin(LED_C8_GPIO_Port, LED_C8_Pin, 0);
+		
+		vTaskDelay(100);
 	}
 }
 
+/*
 void taskBtn(void *pvParm){
 	uint32_t preMS = 0;
 	uint8_t mode = 0;
@@ -162,6 +164,68 @@ void taskBtn(void *pvParm){
 		preMS = xTaskGetTickCount();
 	}
 }
+*/
+
+/****
+sw1, 2 -> rising edge
+sw3, 4 -> falling edge
+****/
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	uint8_t mode = 0;
+	
+	switch(GPIO_Pin){
+		//sw1 PE3
+		case GPIO_PIN_3:
+		{
+			if(HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin) == 1){
+				mode = 0;
+				printf("display mode:default \r\n");
+				xQueueSendFromISR(queueSwitch, &mode, NULL);
+			}
+			break;
+		}
+		
+		//sw2 PE4
+		case GPIO_PIN_4:
+		{
+			if(HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin) == 1){
+				mode = 1;
+				printf("display mode:student id \r\n");
+				xQueueSendFromISR(queueSwitch, &mode, NULL);
+			}
+			break;
+		}
+		
+		//sw3 PE5
+		case GPIO_PIN_5:
+		{
+			if(HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin) == 0){
+				mode = 2;
+				printf("display mode:system startup timer \r\n");
+				xQueueSendFromISR(queueSwitch, &mode, NULL);
+			}
+			break;
+		}
+		
+		//sw4 PE6
+		case GPIO_PIN_6:
+		{
+			if(HAL_GPIO_ReadPin(SW4_GPIO_Port, SW4_Pin) == 0){
+				mode = 3;
+				printf("display mode:reserved, back to default \r\n");
+				xQueueSendFromISR(queueSwitch, &mode, NULL);
+			}
+			break;
+		}
+		
+		default:
+			mode = 0;
+			xQueueSendFromISR(queueSwitch, &mode, NULL);
+			printf("unknown irq happend \r\n");
+			break;
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -200,7 +264,7 @@ int main(void)
 	queueSwitch = xQueueCreate(3, sizeof(uint8_t));
 	
 	xTaskCreate(task7Segment, "7segment", 128, NULL, 1, &handle7Segment);
-	xTaskCreate(taskBtn, "btn_scan", 128, NULL, 1, &handleBtn);
+	//xTaskCreate(taskBtn, "btn_scan", 128, NULL, 1, &handleBtn);
 	
 	printf("start scheduler \r\n");
 	printf("display mode:default \r\n");
@@ -209,11 +273,10 @@ int main(void)
   /* USER CODE END 2 */
 
   /* Init scheduler */
-  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
-  MX_FREERTOS_Init();
+
 
   /* Start scheduler */
-  osKernelStart();
+
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
